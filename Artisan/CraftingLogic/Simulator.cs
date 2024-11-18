@@ -1,11 +1,8 @@
-﻿using Artisan.CraftingLogic.CraftData;
-using Artisan.GameInterop.CSExt;
+﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
 using Dalamud.Utility;
-using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
 using System.Numerics;
@@ -59,7 +56,7 @@ public static class Simulator
             RemainingCP = craft.StatCP, 
             CarefulObservationLeft = craft.Specialist ? 3 : 0, 
             HeartAndSoulAvailable = craft.Specialist,
-            QuickInnoAvailable = craft.Specialist,
+            QuickInnoLeft = craft.Specialist ? 1 : 0,
             TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection), 
             Condition = Condition.Normal 
         };
@@ -197,7 +194,8 @@ public static class Simulator
         next.CarefulObservationLeft = step.CarefulObservationLeft - (action == Skills.CarefulObservation ? 1 : 0);
         next.HeartAndSoulActive = action == Skills.HeartAndSoul || step.HeartAndSoulActive && (step.Condition is Condition.Good or Condition.Excellent || !ConsumeHeartAndSoul(action));
         next.HeartAndSoulAvailable = step.HeartAndSoulAvailable && action != Skills.HeartAndSoul;
-        next.QuickInnoAvailable = step.QuickInnoAvailable && action != Skills.QuickInnovation;
+        next.QuickInnoLeft = step.QuickInnoLeft - (action == Skills.QuickInnovation ? 1 : 0);
+        next.QuickInnoAvailable = step.QuickInnoLeft > 0 && next.InnovationLeft == 0;
         next.PrevActionFailed = !success;
         next.PrevComboAction = action; // note: even stuff like final appraisal and h&s break combos
         next.TrainedPerfectionActive = action == Skills.TrainedPerfection || (step.TrainedPerfectionActive && !HasDurabilityCost(action));
@@ -275,7 +273,7 @@ public static class Simulator
         Skills.HeartAndSoul => step.HeartAndSoulAvailable,
         Skills.TrainedPerfection => step.TrainedPerfectionAvailable,
         Skills.DaringTouch => step.ExpedienceLeft > 0,
-        Skills.QuickInnovation => step.QuickInnoAvailable && step.InnovationLeft == 0,
+        Skills.QuickInnovation => step.QuickInnoLeft > 0 && step.InnovationLeft == 0,
         _ => true
     } && craft.StatLevel >= MinLevel(action) && step.RemainingCP >= GetCPCost(step, action);
 
