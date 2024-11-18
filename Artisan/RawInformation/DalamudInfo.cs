@@ -14,6 +14,8 @@ namespace Artisan.RawInformation
         public static bool IsStaging = false;
         public static bool IsOnStaging()
         {
+            return false;
+
             if (StagingChecked)
             {
                 return IsStaging;
